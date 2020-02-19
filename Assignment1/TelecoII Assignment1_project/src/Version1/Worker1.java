@@ -1,0 +1,89 @@
+package Version1;
+/*
+public class Worker1 {
+
+}*/
+import java.util.Scanner;
+import java.net.DatagramSocket;
+import java.net.DatagramPacket;
+import java.net.InetSocketAddress;
+
+import tcdIO.*;
+
+/**
+ *
+ * Client class
+ * 
+ * An instance accepts user input 
+ *
+ */
+public class Worker1 extends Node {
+	static final int DEFAULT_SRC_PORT = 50000;
+	static final int DEFAULT_DST_PORT = 50001;
+	static final String DEFAULT_DST_NODE = "localhost";	
+	static String name;
+	
+	Terminal terminal;
+	InetSocketAddress dstAddress;
+	
+	/**
+	 * Constructor
+	 * 	 
+	 * Attempts to create socket at given port and create an InetSocketAddress for the destinations
+	 */
+	Worker1(Terminal terminal, String dstHost, int dstPort, int srcPort) {
+		try {
+			this.terminal= terminal;
+			dstAddress= new InetSocketAddress(dstHost, dstPort);
+			socket= new DatagramSocket(srcPort);
+			listener.go();
+		}
+		catch(java.lang.Exception e) {e.printStackTrace();}
+	}
+
+	
+	/**
+	 * Assume that incoming packets contain a String and print the string.
+	 */
+	public synchronized void onReceipt(DatagramPacket packet) {
+		StringContent content= new StringContent(packet);
+		this.notify();
+		terminal.println(name+"\n");
+		terminal.println(content.toString());
+	}
+
+	
+	/**
+	 * Sender Method
+	 * 
+	 */
+	public synchronized void start() throws Exception {
+		byte[] data= null;
+		DatagramPacket packet= null;
+		
+			data= (terminal.readString("String to send: ")).getBytes();
+			
+			terminal.println("Sending packet...");
+			packet= new DatagramPacket(data, data.length, dstAddress);
+			socket.send(packet);
+			terminal.println("Packet sent");
+			this.wait();
+	}
+
+
+	/**
+	 * Test method
+	 * 
+	 * Sends a packet to a given address
+	 */
+	public static void main(String[] args) {
+		try {					
+			Terminal terminal= new Terminal("Worker1");	
+			System.out.println("What is your name?");
+			Scanner inputScanner = new Scanner(System.in);
+			name = inputScanner.next();
+			(new Worker1(terminal, DEFAULT_DST_NODE, DEFAULT_DST_PORT, DEFAULT_SRC_PORT)).start();
+			terminal.println("Program completed");
+		} catch(java.lang.Exception e) {e.printStackTrace();}
+	}
+}
